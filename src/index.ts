@@ -31,36 +31,38 @@ onAuthStateChanged(auth, async (user) => {
 		// https://firebase.google.com/docs/reference/js/firebase.User
 		const uid = user.uid;
 		const _isAdmin = await hasAdminRole(user.email as string)
-		if (_isAdmin) console.log('Enter !')
-		const btnDownload = document.getElementById('download');
-		if (btnDownload) {
-			btnDownload.style.display = 'inherit'
-			btnDownload.addEventListener("click", async () => {
-				const db = getFirestore(app);
-				const querySnapshot = await getDocs(collection(db, "worklog"));
-				const _worklog: any = [];
-				const wlFinished = new Promise((resolve, reject) => {
-					let i = 1;
-					querySnapshot.forEach(async (doc) => {
-						const refDoc: any = await getDoc(doc.data().project);
-						_worklog.push({
-							'adres': doc.data().address,
-							'clientId': doc.data().clientId,
-							'project': refDoc.data().name,
-							'datetime': doc.data().dateCreated.toDate().toLocaleString()
-						})
-						if (i++ == querySnapshot.size) resolve(true);
+		if (_isAdmin) {
+			const sectAdmin = document.getElementById('admin');
+			if(sectAdmin) sectAdmin.style.display = 'inherit'
+			const btnDownload = document.getElementById('download');
+			if (btnDownload) {
+				btnDownload.addEventListener("click", async () => {
+					const db = getFirestore(app);
+					const querySnapshot = await getDocs(collection(db, "worklog"));
+					const _worklog: any = [];
+					const wlFinished = new Promise((resolve, reject) => {
+						let i = 1;
+						querySnapshot.forEach(async (doc) => {
+							const refDoc: any = await getDoc(doc.data().project);
+							_worklog.push({
+								'adres': doc.data().address,
+								'clientId': doc.data().clientId,
+								'project': refDoc.data().name,
+								'datetime': doc.data().dateCreated.toDate().toLocaleString()
+							})
+							if (i++ == querySnapshot.size) resolve(true);
+						});
 					});
-				});
-
-				wlFinished.then(() => {
-					console.log(_worklog);
-					const worklogWS = XLSX.utils.json_to_sheet(_worklog);
-					const wb = XLSX.utils.book_new();
-					XLSX.utils.book_append_sheet(wb, worklogWS, 'worklog');
-					XLSX.writeFile(wb, 'worklog.xlsx');
-				});
-			})
+	
+					wlFinished.then(() => {
+						console.log(_worklog);
+						const worklogWS = XLSX.utils.json_to_sheet(_worklog);
+						const wb = XLSX.utils.book_new();
+						XLSX.utils.book_append_sheet(wb, worklogWS, 'worklog');
+						XLSX.writeFile(wb, 'worklog.xlsx');
+					});
+				})
+			}
 		}
 	} else {
 		signInWithRedirect(auth, provider)
