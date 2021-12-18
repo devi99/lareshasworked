@@ -1,5 +1,24 @@
 {
+  "scripts": {
+    "build:dev": "webpack --config ./src/config/webpack.build.ts --env dev",
+    "build:test": "webpack --config ./src/config/webpack.build.ts --env test"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.16.0",
+    "@babel/preset-env": "^7.16.4",
+    "babel-loader": "^8.2.3",
+    "clean-webpack-plugin": "^4.0.0",
+    "html-webpack-plugin": "^5.5.0",
+    "ts-loader": "^9.2.6",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.2",
+    "webpack": "^5.64.4",
+    "webpack-cli": "^4.9.1"
+  },
   "dependencies": {
-    "firebase": "^9.6.1"
+    "babel-polyfill": "^6.26.0",
+    "firebase": "^9.6.1",
+    "firebaseui": "^6.0.0",
+    "xlsx": "^0.17.4"
   }
 }
