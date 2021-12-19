@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore/lite';
+import { getFirestore, collection, getDocs, query, where, doc, getDoc, orderBy } from 'firebase/firestore/lite';
 import { getAuth, signInWithRedirect, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
 import XLSX from 'xlsx';
 
@@ -38,7 +38,9 @@ onAuthStateChanged(auth, async (user) => {
 			if (btnDownload) {
 				btnDownload.addEventListener("click", async () => {
 					const db = getFirestore(app);
-					const querySnapshot = await getDocs(collection(db, "worklog"));
+					const worklogRef = collection(db, "worklog");
+					const q = query(worklogRef, orderBy("deviceId"), orderBy("dateCreated"));
+					const querySnapshot = await getDocs(q);
 					const _worklog: any = [];
 					const wlFinished = new Promise((resolve, reject) => {
 						let i = 1;
@@ -47,8 +49,10 @@ onAuthStateChanged(auth, async (user) => {
 							_worklog.push({
 								'adres': doc.data().address,
 								'clientId': doc.data().clientId,
+								'username': doc.data().username,
 								'project': refDoc.data().name,
-								'datetime': doc.data().dateCreated.toDate().toLocaleString()
+								'datetime': doc.data().dateCreated.toDate().toLocaleString(),
+								'isStartTime': doc.data().isStartTime
 							})
 							if (i++ == querySnapshot.size) resolve(true);
 						});
