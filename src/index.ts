@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, query, where, doc, getDoc, orderBy } from 'firebase/firestore/lite';
+import { getFirestore, collection, getDocs, query, where, doc, getDoc, orderBy, Timestamp, setDoc, addDoc } from 'firebase/firestore/lite';
 import { getAuth, signInWithRedirect, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
 import XLSX from 'xlsx';
 
@@ -39,22 +39,30 @@ onAuthStateChanged(auth, async (user) => {
 				btnDownload.addEventListener("click", async () => {
 					const db = getFirestore(app);
 					const worklogRef = collection(db, "worklog");
-					const q = query(worklogRef, orderBy("deviceId"), orderBy("dateCreated"));
+					const fromDate = document.getElementById('startDate') as HTMLInputElement
+					const toDate = document.getElementById('endDate') as HTMLInputElement
+					const startDate = Timestamp.fromDate(new Date(fromDate.value))
+					const endDate = Timestamp.fromDate(new Date(toDate.value))
+					const q = query(worklogRef, where('dateCreated', '>=', startDate), where('dateCreated', '<=', endDate), orderBy("dateCreated", "asc"), orderBy("deviceId", "asc") );
 					const querySnapshot = await getDocs(q);
 					const _worklog: any = [];
 					const wlFinished = new Promise((resolve, reject) => {
-						let i = 1;
-						querySnapshot.forEach(async (doc) => {
-							const refDoc: any = await getDoc(doc.data().project);
+						querySnapshot.forEach((doc) => {
 							_worklog.push({
 								'adres': doc.data().address,
-								'clientId': doc.data().clientId,
+								'deviceId': doc.data().deviceId,
 								'username': doc.data().username,
-								'project': refDoc.data().name,
+								'project': doc.data().project,
 								'datetime': doc.data().dateCreated.toDate().toLocaleString(),
 								'isStartTime': doc.data().isStartTime
 							})
-							if (i++ == querySnapshot.size) resolve(true);
+						});
+
+						let i = 1;
+						_worklog.forEach(async (log: any) => {
+							const refDoc: any = await getDoc(log.project);
+							log.project = refDoc.data().name
+							if (i++ == _worklog.length) resolve(true);
 						});
 					});
 	
@@ -64,6 +72,24 @@ onAuthStateChanged(auth, async (user) => {
 						const wb = XLSX.utils.book_new();
 						XLSX.utils.book_append_sheet(wb, worklogWS, 'worklog');
 						XLSX.writeFile(wb, 'worklog.xlsx');
+					});
+				})
+			}
+			const btnUploadProject = document.getElementById('uploadProject');
+			if (btnUploadProject) {
+				btnUploadProject.addEventListener("click", async () => {
+					const db = getFirestore(app);
+					const projectsRef = collection(db, "projects");
+					const newProjectName = document.getElementById('projectName') as HTMLInputElement
+					const wlFinished = new Promise(async (resolve, reject) => {
+						const docRef = await addDoc(projectsRef, {
+							name: newProjectName.value,
+						  });
+						  return docRef;
+					});
+	
+					wlFinished.then((res: any) => {
+						console.log(res.docRef);
 					});
 				})
 			}
